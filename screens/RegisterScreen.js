@@ -6,12 +6,29 @@ export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleRegister = () => {
-    if (name.trim() && email.trim() && password.trim()) {
-      Alert.alert('Éxito', 'Cuenta creada correctamente');
-      navigation.replace('Login');
-    } else {
+  const handleRegister = async () => {
+    if (!name.trim() || !email.trim() || !password.trim()) {
       Alert.alert('Error', 'Completa todos los campos');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://10.0.2.2:3000/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert('Éxito', 'Cuenta creada correctamente');
+        navigation.replace('Login');
+      } else {
+        Alert.alert('Error', data.error || 'No se pudo registrar el usuario');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo conectar con el servidor');
     }
   };
 

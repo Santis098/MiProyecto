@@ -5,11 +5,29 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
-    if (email.trim() && password.trim()) {
-      navigation.replace('Home');
-    } else {
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
       Alert.alert('Error', 'Por favor completa los campos');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://10.0.2.2:3000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert('Éxito', 'Inicio de sesión exitoso');
+        navigation.replace('Home');
+      } else {
+        Alert.alert('Error', data.error || 'Credenciales incorrectas');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo conectar con el servidor');
     }
   };
 
