@@ -3,33 +3,31 @@ import { View, Text, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen() {
+  const [userName, setUserName] = useState('');
   const [totalSavings, setTotalSavings] = useState('0');
   const [currency, setCurrency] = useState('COP');
 
   useEffect(() => {
-    const loadSavings = async () => {
-      const savedAmount = await AsyncStorage.getItem('savings');
-      const savedCurrency = await AsyncStorage.getItem('currency');
+    const loadUserData = async () => {
+      try {
+        const savedName = await AsyncStorage.getItem('user_name'); // Obtener el nombre guardado
+        const savedAmount = await AsyncStorage.getItem('savings');
+        const savedCurrency = await AsyncStorage.getItem('currency');
 
-      if (savedAmount) {
-        setTotalSavings(savedAmount);
-      }
-
-      if (savedCurrency) {
-        setCurrency(savedCurrency);
+        if (savedName) setUserName(savedName);
+        if (savedAmount) setTotalSavings(savedAmount);
+        if (savedCurrency) setCurrency(savedCurrency);
+      } catch (error) {
+        console.error('Error cargando los datos del usuario:', error);
       }
     };
 
-    const focusListener = setInterval(loadSavings, 1000); // Verificar cambios cada segundo
-
-    loadSavings();
-
-    return () => clearInterval(focusListener);
+    loadUserData();
   }, []);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bienvenido</Text>
+      <Text style={styles.title}>Bienvenido, {userName}</Text>
       <Text style={styles.subtitle}>Tu meta actual es:</Text>
       <Text style={styles.savings}>
         {currency} {totalSavings}

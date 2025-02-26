@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -21,6 +22,8 @@ export default function LoginScreen({ navigation }) {
       const data = await response.json();
 
       if (response.ok) {
+        await AsyncStorage.setItem('user_name', data.usuario.nombre); // Guarda el nombre
+        await AsyncStorage.setItem('configuracion_home', JSON.stringify(data.usuario.configuracion_home));
         Alert.alert('Éxito', 'Inicio de sesión exitoso');
         navigation.replace('Home');
       } else {
