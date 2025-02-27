@@ -11,13 +11,27 @@ export default function SavingsScreen() {
   const [inputsDisabled, setInputsDisabled] = useState(false);
   const [buttonDisabled, setButtonDisabled] = useState(false);
 
+
+ 
+    
+
   useEffect(() => {
     const loadCurrency = async () => {
-      const savedCurrency = await AsyncStorage.getItem('tipo_moneda');
-      if (savedCurrency) setCurrency(savedCurrency);
+      try {
+        const savedCurrency = await AsyncStorage.getItem('tipo_moneda');
+  
+        if (savedCurrency) setCurrency(savedCurrency);
+      } catch (error) {
+        console.error('❌ Error cargando los datos de ahorro:', error);
+      }
     };
-
-    loadCurrency();
+  
+    loadCurrency();// Carga inicial
+  
+    // Actualiza los valores cada 1 segundo
+    const interval = setInterval(loadCurrency, 1000);
+  
+    return () => clearInterval(interval); // Limpia el intervalo al desmontar
   }, []);
 
   const formatNumber = (value) => {
