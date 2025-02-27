@@ -76,6 +76,45 @@ app.post('/login', async (req, res) => {
     }
 });
 
+app.get('/user', async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+
+        if (!token) {
+            return res.status(401).json({ error: 'No autorizado' });
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const result = await pool.query("SELECT id, nombre, email FROM usuarios WHERE id = $1", [decoded.id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error obteniendo usuario:', error);
+        res.status(500).json({ error: 'Error en el servidor' });
+    }
+});
+
+app.get('/user/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query("SELECT meta_ahorro FROM usuarios WHERE id = $1", [id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error obteniendo meta_ahorro:', error);
+        res.status(500).json({ error: 'Error en el servidor' });
+    }
+});
+
+
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

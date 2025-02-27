@@ -7,32 +7,27 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Por favor completa los campos');
-      return;
-    }
-
     try {
-      const response = await fetch('http://10.0.2.2:3000/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+        const response = await fetch('http://10.0.2.2:3000/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+        });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        await AsyncStorage.setItem('user_name', data.usuario.nombre); // Guarda el nombre
-        await AsyncStorage.setItem('configuracion_home', JSON.stringify(data.usuario.configuracion_home));
-        Alert.alert('Éxito', 'Inicio de sesión exitoso');
-        navigation.replace('Home');
-      } else {
-        Alert.alert('Error', data.error || 'Credenciales incorrectas');
-      }
+        const data = await response.json();
+        
+        if (response.ok) {
+            await AsyncStorage.setItem('user_id', String(data.usuario.id));
+            await AsyncStorage.setItem('user_name', data.usuario.nombre);
+            await AsyncStorage.setItem('meta_ahorro', String(data.usuario.meta_ahorro));
+            navigation.replace('Home');
+        } else {
+            Alert.alert('Error', data.error || 'Credenciales incorrectas');
+        }
     } catch (error) {
-      Alert.alert('Error', 'No se pudo conectar con el servidor');
+        Alert.alert('Error', 'No se pudo conectar con el servidor');
     }
-  };
+};
 
   return (
     <View style={styles.container}>

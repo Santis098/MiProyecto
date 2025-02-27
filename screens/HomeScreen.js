@@ -9,21 +9,18 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const loadUserData = async () => {
-      try {
-        const savedName = await AsyncStorage.getItem('user_name'); // Obtener el nombre guardado
-        const savedAmount = await AsyncStorage.getItem('savings');
-        const savedCurrency = await AsyncStorage.getItem('currency');
-
-        if (savedName) setUserName(savedName);
-        if (savedAmount) setTotalSavings(savedAmount);
-        if (savedCurrency) setCurrency(savedCurrency);
-      } catch (error) {
-        console.error('Error cargando los datos del usuario:', error);
-      }
+        try {
+            const savedName = await AsyncStorage.getItem('user_name');
+            const savedMetaAhorro = await AsyncStorage.getItem('meta_ahorro');
+            
+            if (savedName) setUserName(savedName);
+            if (savedMetaAhorro) setTotalSavings(savedMetaAhorro);
+        } catch (error) {
+            console.error('Error cargando los datos del usuario:', error);
+        }
     };
-
     loadUserData();
-  }, []);
+}, []);
 
   return (
     <View style={styles.container}>
