@@ -8,26 +8,45 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async () => {
     try {
-        const response = await fetch('http://10.0.2.2:3000/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-        });
-
-        const data = await response.json();
-        
-        if (response.ok) {
-            await AsyncStorage.setItem('user_id', String(data.usuario.id));
-            await AsyncStorage.setItem('user_name', data.usuario.nombre);
-            await AsyncStorage.setItem('meta_ahorro', String(data.usuario.meta_ahorro));
-            navigation.replace('Home');
+      const response = await fetch('http://10.0.2.2:3000/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+  
+      const data = await response.json();
+      console.log('📡 Respuesta del servidor:', data);
+  
+      if (response.ok) {
+        await AsyncStorage.setItem('user_id', String(data.usuario.id));
+        await AsyncStorage.setItem('user_name', data.usuario.nombre);
+  
+        if ('meta_ahorro' in data.usuario) {  // ✅ Solo guardar si existe
+          const ahorroValue = String(data.usuario.meta_ahorro);
+          console.log('✅ Guardando en AsyncStorage meta_ahorro:', ahorroValue);
+          await AsyncStorage.setItem('meta_ahorro', ahorroValue);
         } else {
-            Alert.alert('Error', data.error || 'Credenciales incorrectas');
+          console.warn('⚠️ El servidor no envió meta_ahorro.');
         }
+
+        if ('tipo_moneda' in data.usuario) {  // ✅ Solo guardar si existe
+          const tipoValue = String(data.usuario.tipo_moneda);
+          console.log('✅ Guardando en AsyncStorage tipo_moneda:', tipoValue);
+          await AsyncStorage.setItem('tipo_moneda', tipoValue);
+        } else {
+          console.warn('⚠️ El servidor no envió tipo_moneda.');
+        }
+  
+        navigation.replace('Home');
+      } else {
+        Alert.alert('Error', data.error || 'Credenciales incorrectas');
+      }
     } catch (error) {
-        Alert.alert('Error', 'No se pudo conectar con el servidor');
+      Alert.alert('Error', 'No se pudo conectar con el servidor');
+      console.error('❌ Error en login:', error);
     }
-};
+  };
+  
 
   return (
     <View style={styles.container}>

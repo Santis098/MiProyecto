@@ -11,10 +11,8 @@ export default function SavingsScreen() {
 
   useEffect(() => {
     const loadCurrency = async () => {
-      const savedCurrency = await AsyncStorage.getItem('currency');
-      if (savedCurrency) {
-        setCurrency(savedCurrency);
-      }
+      const savedCurrency = await AsyncStorage.getItem('tipo_moneda');
+      if (savedCurrency) setCurrency(savedCurrency);
     };
 
     const focusListener = setInterval(loadCurrency, 1000); // Verificar cambios cada segundo
@@ -64,28 +62,26 @@ export default function SavingsScreen() {
             return;
         }
 
-        const API_URL = Platform.OS === 'android' 
-        ? 'http://10.0.2.2:3000' 
-        : 'http://localhost:3000';
-
-        const response = await fetch(`${API_URL}/user/${userId}/savings`, {
+        const response = await fetch(`http://10.0.2.2:3000/user/${userId}/savings`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ meta_ahorro: savingsValue }),
         });
 
         const data = await response.json();
-        
+
         if (response.ok) {
             await AsyncStorage.setItem('meta_ahorro', String(savingsValue));
+            console.log('✅ Guardado en AsyncStorage:', savingsValue);  // <-- CONFIRMA QUE SE GUARDA
             Alert.alert('Éxito', 'Ahorro actualizado correctamente');
         } else {
             Alert.alert('Error', data.error || 'No se pudo actualizar el ahorro');
         }
     } catch (error) {
-        Alert.alert('Error', 'No se pudo conectar con el servidor');
+        console.error('Error guardando el ahorro:', error);
     }
-};  
+};
+  
 
   return (
     <View style={styles.container}>

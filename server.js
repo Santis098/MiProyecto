@@ -26,8 +26,8 @@ app.post('/register', async (req, res) => {
         }
 
         const result = await pool.query(
-            'INSERT INTO usuarios (nombre, email, "password", configuracion_home) VALUES ($1, $2, $3, $4) RETURNING *',
-            [nombre, email, password, configuracion_home || '{}']
+            'INSERT INTO usuarios (nombre, email, "password", configuracion_home, meta_ahorro) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [nombre, email, password, configuracion_home || '{}', 0]
         );
 
         res.status(201).json({ mensaje: "Usuario registrado con éxito", usuario: result.rows[0] });
@@ -64,18 +64,26 @@ app.post('/login', async (req, res) => {
             { expiresIn: "7d" }
         );
 
-        res.json({ mensaje: "Inicio de sesión exitoso", token, usuario: {
-            id: usuario.id,
-            email: usuario.email,
-            nombre: usuario.nombre,
-            configuracion_home: usuario.configuracion_home
-        }});
+        res.json({ 
+            mensaje: "Inicio de sesión exitoso", 
+            token, 
+            usuario: {
+                id: usuario.id,
+                email: usuario.email,
+                nombre: usuario.nombre,
+                configuracion_home: usuario.configuracion_home,
+                meta_ahorro: usuario.meta_ahorro || 0,  // ✅ Ahora siempre enviamos `meta_ahorro`
+                tipo_moneda: usuario.tipo_moneda
+
+            }
+        });
     } catch (error) {
         console.error("Error en el login:", error);
         res.status(500).json({ error: "Error en el servidor" });
     }
 });
 
+// Obtener datos del usuario autenticado
 app.get('/user', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
@@ -85,7 +93,7 @@ app.get('/user', async (req, res) => {
         }
 
         const decoded = jwt.verify(token, JWT_SECRET);
-        const result = await pool.query("SELECT id, nombre, email FROM usuarios WHERE id = $1", [decoded.id]);
+        const result = await pool.query("SELECT id, nombre, email, meta_ahorro FROM usuarios WHERE id = $1", [decoded.id]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -98,6 +106,7 @@ app.get('/user', async (req, res) => {
     }
 });
 
+// Obtener meta de ahorro de un usuario por ID
 app.get('/user/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -114,6 +123,7 @@ app.get('/user/:id', async (req, res) => {
     }
 });
 
+// Actualizar la meta de ahorro de un usuario
 app.put('/user/:id/savings', async (req, res) => {
     try {
         const { id } = req.params;
@@ -132,6 +142,22 @@ app.put('/user/:id/savings', async (req, res) => {
 });
 
 
+app.put('/user/:id/currency', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { tipo_moneda } = req.body;
+
+        if (!tipo_moneda || (tipo_moneda !== 'COP' && tipo_moneda !== 'USD')) {
+            return res.status(400).json({ error: 'Tipo de moneda inválido' });
+        }
+
+        await pool.query("UPDATE usuarios SET tipo_moneda = $1 WHERE id = $2", [tipo_moneda, id]);
+        res.json({ success: true, tipo_moneda });
+    } catch (error) {
+        console.error('Error actualizando tipo_moneda:', error);
+        res.status(500).json({ error: 'Error en el servidor' });
+    }
+});
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
