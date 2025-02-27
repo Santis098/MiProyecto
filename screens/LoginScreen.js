@@ -36,6 +36,14 @@ export default function LoginScreen({ navigation }) {
         } else {
           console.warn('⚠️ El servidor no envió tipo_moneda.');
         }
+
+        if ('dinero_ahorrado' in data.usuario) {  
+          const ahorroValue = String(data.usuario.dinero_ahorrado);
+          console.log('✅ Guardando en AsyncStorage dinero_ahorrado:', ahorroValue);
+          await AsyncStorage.setItem('dinero_ahorrado', ahorroValue);
+        } else {
+          console.warn('⚠️ El servidor no envió dinero_ahorrado.');
+        }
   
         navigation.replace('Home');
       } else {

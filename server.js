@@ -46,24 +46,39 @@ app.post('/login', async (req, res) => {
             return res.status(400).json({ error: "Todos los campos son obligatorios" });
         }
 
-        const result = await pool.query("SELECT * FROM usuarios WHERE email = $1", [email]);
+        // Consulta para obtener datos del usuario
+        const userResult = await pool.query(
+            "SELECT id, email, nombre, password, configuracion_home, meta_ahorro, tipo_moneda FROM usuarios WHERE email = $1",
+            [email]
+        );
 
-        if (result.rows.length === 0) {
+        if (userResult.rows.length === 0) {
             return res.status(401).json({ error: "Usuario no encontrado" });
         }
 
-        const usuario = result.rows[0];
+        const usuario = userResult.rows[0];
 
         if (usuario.password !== password) {
             return res.status(401).json({ error: "Contraseña incorrecta" });
         }
 
+        // Consulta separada para obtener `dinero_ahorrado` desde la tabla `ahorros_usuarios`
+        const ahorroResult = await pool.query(
+            "SELECT dinero_ahorrado FROM ahorros_usuarios WHERE usuario_id = $1",
+            [usuario.id]
+        );
+
+        // Si no hay registros en `ahorros_usuarios`, asumimos 0
+        const dinero_ahorrado = ahorroResult.rows.length > 0 ? ahorroResult.rows[0].dinero_ahorrado : 0;
+
+        // Generar el token JWT
         const token = jwt.sign(
             { id: usuario.id, email: usuario.email, nombre: usuario.nombre },
             JWT_SECRET,
             { expiresIn: "7d" }
         );
 
+        // Responder con los datos del usuario incluyendo `dinero_ahorrado`
         res.json({ 
             mensaje: "Inicio de sesión exitoso", 
             token, 
@@ -72,16 +87,18 @@ app.post('/login', async (req, res) => {
                 email: usuario.email,
                 nombre: usuario.nombre,
                 configuracion_home: usuario.configuracion_home,
-                meta_ahorro: usuario.meta_ahorro || 0,  // ✅ Ahora siempre enviamos `meta_ahorro`
+                meta_ahorro: usuario.meta_ahorro || 0, 
+                dinero_ahorrado,  // ✅ Obtenido en una consulta separada
                 tipo_moneda: usuario.tipo_moneda
-
             }
         });
+
     } catch (error) {
-        console.error("Error en el login:", error);
+        console.error("❌ Error en el login:", error);
         res.status(500).json({ error: "Error en el servidor" });
     }
 });
+
 
 // Obtener datos del usuario autenticado
 app.get('/user', async (req, res) => {
@@ -158,6 +175,48 @@ app.put('/user/:id/currency', async (req, res) => {
         res.status(500).json({ error: 'Error en el servidor' });
     }
 });
+
+app.put('/user/:id/increment-savings', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { amount } = req.body;
+
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ error: 'Monto inválido' });
+        }
+
+        const userExists = await pool.query(`SELECT id FROM usuarios WHERE id = $1`, [id]);
+        if (userExists.rowCount === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+
+        const savingsExists = await pool.query(`SELECT dinero_ahorrado FROM ahorros_usuarios WHERE usuario_id = $1`, [id]);
+
+        if (savingsExists.rowCount === 0) {
+            const insertResult = await pool.query(
+                `INSERT INTO ahorros_usuarios (usuario_id, dinero_ahorrado) VALUES ($1, $2) RETURNING dinero_ahorrado`,
+                [id, amount]
+            );
+            return res.json({ success: true, nuevo_dinero_ahorrado: insertResult.rows[0].dinero_ahorrado });
+        } else {
+            const updateResult = await pool.query(
+                `UPDATE ahorros_usuarios 
+                 SET dinero_ahorrado = dinero_ahorrado + $2 
+                 WHERE usuario_id = $1 
+                 RETURNING dinero_ahorrado`,
+                [id, amount]
+            );
+            return res.json({ success: true, nuevo_dinero_ahorrado: updateResult.rows[0].dinero_ahorrado });
+        }
+    } catch (error) {
+        console.error('Error incrementando ahorro:', error);
+        res.status(500).json({ error: 'Error en el servidor' });  // ❗ Devolver siempre JSON
+    }
+});
+
+
+
+
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
