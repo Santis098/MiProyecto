@@ -114,6 +114,24 @@ app.get('/user/:id', async (req, res) => {
     }
 });
 
+app.put('/user/:id/savings', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { meta_ahorro } = req.body;
+        
+        if (!meta_ahorro || isNaN(meta_ahorro) || meta_ahorro <= 0) {
+            return res.status(400).json({ error: 'Monto inválido' });
+        }
+
+        await pool.query("UPDATE usuarios SET meta_ahorro = $1 WHERE id = $2", [meta_ahorro, id]);
+        res.json({ success: true, meta_ahorro });
+    } catch (error) {
+        console.error('Error actualizando meta_ahorro:', error);
+        res.status(500).json({ error: 'Error en el servidor' });
+    }
+});
+
+
 
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;

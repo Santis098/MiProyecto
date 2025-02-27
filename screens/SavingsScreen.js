@@ -55,13 +55,33 @@ export default function SavingsScreen() {
   };
 
   const saveSavings = async () => {
-    if (!totalSavings || parseInt(totalSavings.replace(/\./g, '')) <= 0) {
-      Alert.alert('Error', 'Ingrese un monto válido');
-      return;
+    try {
+        const userId = await AsyncStorage.getItem('user_id');
+        const savingsValue = parseInt(totalSavings.replace(/\./g, ''));
+
+        if (!savingsValue || savingsValue <= 0) {
+            Alert.alert('Error', 'Ingrese un monto válido');
+            return;
+        }
+
+        const response = await fetch(`http://10.0.2.2:3000/user/1/savings`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ meta_ahorro: savingsValue }),
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+            await AsyncStorage.setItem('meta_ahorro', String(savingsValue));
+            Alert.alert('Éxito', 'Ahorro actualizado correctamente');
+        } else {
+            Alert.alert('Error', data.error || 'No se pudo actualizar el ahorro');
+        }
+    } catch (error) {
+        Alert.alert('Error', 'No se pudo conectar con el servidor');
     }
-    await AsyncStorage.setItem('savings', totalSavings);
-    Alert.alert('Éxito', 'Ahorro guardado correctamente');
-  };
+};  
 
   return (
     <View style={styles.container}>
