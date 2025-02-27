@@ -64,7 +64,11 @@ export default function SavingsScreen() {
             return;
         }
 
-        const response = await fetch(`http://10.0.2.2:3000/user/1/savings`, {
+        const API_URL = Platform.OS === 'android' 
+        ? 'http://10.0.2.2:3000' 
+        : 'http://localhost:3000';
+
+        const response = await fetch(`${API_URL}/user/${userId}/savings`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ meta_ahorro: savingsValue }),

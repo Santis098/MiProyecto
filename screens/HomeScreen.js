@@ -15,13 +15,18 @@ export default function HomeScreen() {
       const savedMetaAhorro = await AsyncStorage.getItem('meta_ahorro');
 
       if (savedName) setUserName(savedName);
-      if (savedMetaAhorro) setTotalSavings(savedMetaAhorro);
+      if (savedMetaAhorro) {
+        // Convertir a número y formatear con separadores de miles
+        const formattedSavings = parseInt(savedMetaAhorro, 10).toLocaleString('es-CO');
+        setTotalSavings(formattedSavings);
+      }
     } catch (error) {
       console.error('Error cargando los datos del usuario:', error);
     }
   };
 
   useFocusEffect(
+    
     useCallback(() => {
       loadUserData();
     }, [])
@@ -30,6 +35,21 @@ export default function HomeScreen() {
   useEffect(() => {
     const interval = setInterval(loadUserData, 5000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const loadCurrency = async () => {
+      const savedCurrency = await AsyncStorage.getItem('currency');
+      if (savedCurrency) {
+        setCurrency(savedCurrency);
+      }
+    };
+
+    const focusListener = setInterval(loadCurrency, 1000); // Verificar cambios cada segundo
+
+    loadCurrency();
+
+    return () => clearInterval(focusListener);
   }, []);
 
   return (
